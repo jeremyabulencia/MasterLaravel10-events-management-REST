@@ -1,66 +1,69 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Installation of Event Management App (REST API)
 
-## About Laravel
+##### Create a laravel project
+```bash
+    composer create-project --prefer-dist laravel/laravel event-management
+```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+##### Modify .env file for database connection
+```php
+    DB_DATABASE=laravel-10-event-management
+    DB_USERNAME=[USERNAME]
+    DB_PASSWORD=[PASSWORD]
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+##### Run migrate command to check if connection can be established and create the database
+```bash
+    php artisan migrate
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+##### Create Models with a migration file(-m)
+```bash
+    # create model with migration files
+    php artisan make:model Event -m 
+```
+<p align="right"><a href="https://github.com/jeremyabulencia/MasterLaravel10-events-management-REST/commit/d7d70495c6afd0d4dc4f9f7582df988dd3a3869f">source code</a></p>
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+    # create model with migration files
+    php artisan make:model Attendee -m
+```
+<p align="right"><a href="https://github.com/jeremyabulencia/MasterLaravel10-events-management-REST/commit/1b7a1df6442c8f9a09b563d4e05863f4da223b23">source code</a></p>
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+##### Create API Controllers
+```bash
+    # create api controller for Attendee
+    php artisan make:controller Api\AttendeeController --api
+```
+<p align="right"><a href="https://github.com/jeremyabulencia/MasterLaravel10-events-management-REST/commit/cf710283309aa7887da0b4343bf9ff4cb4e91eab">source code</a></p>
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+    # create api controller for Event
+    php artisan make:controller Api\EventController --api
+```
+<p align="right"><a href="https://github.com/jeremyabulencia/MasterLaravel10-events-management-REST/commit/36be4b30ac12e03ca3117e74aee89c079ade5452">source code</a></p>
 
-## Laravel Sponsors
+##### Creating routes on `routes/api.php`
+```php
+    # use namespace on top
+    use App\Http\Controllers\Api\AttendeeController;
+    use App\Http\Controllers\Api\EventController;
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+    # add routes below
+    Route::apiResource('events', EventController::class);
+    Route::apiResource('events.attendees', AttendeeController::class)
+        ->scoped(['attendee' => 'event']);
+```
 
-### Premium Partners
+##### Define fields on migration and Relationships
+```link
+    https://github.com/jeremyabulencia/MasterLaravel10-events-management-REST/commit/e0c7ce8ce2d8df604f2ba7c0fbb6225933eeed62
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+##### Run migration with seed to apply migrations to the Database
+```bash
+    php artisan migrate:refresh --seed
+```
