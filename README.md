@@ -67,3 +67,147 @@
 ```bash
     php artisan migrate:refresh --seed
 ```
+
+## Defining Routes
+`routes.php`
+```php
+    Route::apiResource('events', EventController::class);
+    Route::apiResource('events.attendees', AttendeeController::class)
+        ->scoped(['attendee' => 'event']);
+```
+`EventController.php`
+##### Listing
+```curl
+    curl --location 'http://127.0.0.1:8000/api/events'
+```
+```php
+    <?php
+
+    namespace App\Http\Controllers\Api;
+
+    use App\Http\Controllers\Controller;
+    use App\Models\Event;
+    use Illuminate\Http\Request;
+
+    class EventController extends Controller
+    {
+        /**
+         * Display a listing of the resource.
+         */
+        public function index()
+        {
+            return Event::all();
+        }
+```
+
+##### Show
+```curl
+    curl --location 'http://127.0.0.1:8000/api/events/202'
+```
+```php
+    <?php
+
+    namespace App\Http\Controllers\Api;
+
+    use App\Http\Controllers\Controller;
+    use App\Models\Event;
+    use Illuminate\Http\Request;
+    class EventController extends Controller
+    {
+        public function show(Event $event)
+        {
+            return $event;
+        }
+```
+
+##### Store
+```curl
+    curl --location 'http://127.0.0.1:8000/api/events' \
+    --header 'Accept: application/json' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "name": "FirstEvent",
+        "start_time": "2023-08-30 08:00:00",
+        "end_time": "2023-09-01 07:59:59"
+    }'
+```
+```php
+    <?php
+
+    namespace App\Http\Controllers\Api;
+
+    use App\Http\Controllers\Controller;
+    use App\Models\Event;
+    use Illuminate\Http\Request;
+    class EventController extends Controller
+    {
+        public function store(Request $request)
+        {
+            $event = Event::create([
+                ...$request->validate([
+                    'name'          => 'required|string|max:255',
+                    'description'   => 'nullable|string',
+                    'start_time'    => 'required|date',
+                    'end_time'      => 'required|date|after:start_time'
+                ]),
+                "user_id"   => 1
+            ]);
+
+            return $event;
+        }
+```
+
+##### Update
+```curl
+    curl --location --request PUT 'http://127.0.0.1:8000/api/events/202' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "name": "FirstEvent Updated 2",
+        "start_time": "2023-08-30 08:00:00",
+        "end_time": "2023-09-01 07:59:59"
+    }'
+```
+```php
+    <?php
+
+    namespace App\Http\Controllers\Api;
+
+    use App\Http\Controllers\Controller;
+    use App\Models\Event;
+    use Illuminate\Http\Request;
+    class EventController extends Controller
+    {
+        public function update(Request $request, Event $event)
+        {
+            $event->update($request->validate([
+                'name'          => 'sometimes|string|max:255',
+                'description'   => 'nullable|string',
+                'start_time'    => 'sometimes|date',
+                'end_time'      => 'sometimes|date|after:start_time'
+            ]));
+
+            return $event;
+        }
+```
+
+##### Destroy
+```curl
+    curl --location --request DELETE 'http://127.0.0.1:8000/api/events/202'
+```
+```php
+    <?php
+
+    namespace App\Http\Controllers\Api;
+
+    use App\Http\Controllers\Controller;
+    use App\Models\Event;
+    use Illuminate\Http\Request;
+    class EventController extends Controller
+    {
+        public function destroy(Event $event)
+        {
+            $event->delete();
+
+            return response(status: 204);
+        }
+```
