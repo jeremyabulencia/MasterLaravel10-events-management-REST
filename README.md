@@ -211,3 +211,123 @@
             return response(status: 204);
         }
 ```
+### API Resource Response JSON
+```bash
+    php artisan make:resource UserResource
+    php artisan make:resource EventResource
+    php artisan make:resource AttendeeResource
+```
+`UserResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class UserResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return parent::toArray($request);
+        }
+    }
+```
+`EventResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class EventResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return [
+                'id'            => $this->id,
+                'name'          => $this->description,
+                'description'   => $this->description,
+                'start_time'    => $this->start_time,
+                'end_time'      => $this->end_time,
+                'user'          => new UserResource($this->whenLoaded('user')),
+                'attendees'     => AttendeeResource::collection(
+                    $this->whenLoaded('attendees')
+                ),
+            ];
+        }
+    }
+```
+`AttendeeResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class AttendeeResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return parent::toArray($request);
+        }
+    }
+```
+### Optional Relation Loading
+```curl
+    http://127.0.0.1:8000/api/events?include=user,attendees
+```
+```php
+    class EventController extends Controller
+    {
+
+        public function index()
+        {
+            $query = Event::query();
+            $relations = ['user', 'attendees', 'attendees.user'];
+
+            foreach ($relations as $relation) {
+                $query->when(
+                    $this->shouldIcludeRelation($relation),
+                    fn($q)  => $q->with($relation)
+                );
+            }
+
+            return EventResource::collection(
+                $query->latest()->paginate()
+            );
+        }
+
+        protected function shouldIcludeRelation(string $relation): bool
+        {
+            $include = request()->query('include');
+
+            if (!$include) {
+                return false;
+            }
+
+            $relations = array_map('trim', explode(',', $include));
+
+            return in_array($relation, $relations);
+        }
+```

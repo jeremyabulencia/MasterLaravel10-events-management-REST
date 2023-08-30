@@ -3,22 +3,43 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\EventResource;
 use App\Models\Event;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
-        return Event::all();
+        $query = Event::query();
+        $relations = ['user', 'attendees', 'attendees.user'];
+
+        foreach ($relations as $relation) {
+            $query->when(
+                $this->shouldIcludeRelation($relation),
+                fn($q)  => $q->with($relation)
+            );
+        }
+
+        return EventResource::collection(
+            $query->latest()->paginate()
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    protected function shouldIcludeRelation(string $relation): bool
+    {
+        $include = request()->query('include');
+
+        if (!$include) {
+            return false;
+        }
+
+        $relations = array_map('trim', explode(',', $include));
+
+        return in_array($relation, $relations);
+    }
+
     public function store(Request $request)
     {
         $event = Event::create([
@@ -31,7 +52,7 @@ class EventController extends Controller
             "user_id"   => 1
         ]);
 
-        return $event;
+        return new EventResource($event);
     }
 
     /**
@@ -39,7 +60,8 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        return $event;
+        $event->load('user','attendees');
+        return new EventResource($event);
     }
 
     /**
@@ -54,7 +76,7 @@ class EventController extends Controller
             'end_time'      => 'sometimes|date|after:start_time'
         ]));
 
-        return $event;
+        return new EventResource($event);
     }
 
     /**
