@@ -211,3 +211,85 @@
             return response(status: 204);
         }
 ```
+### API Resource Response JSON
+```bash
+    php artisan make:resource UserResource
+    php artisan make:resource EventResource
+    php artisan make:resource AttendeeResource
+```
+`UserResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class UserResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return parent::toArray($request);
+        }
+    }
+```
+`EventResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class EventResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return [
+                'id'            => $this->id,
+                'name'          => $this->description,
+                'description'   => $this->description,
+                'start_time'    => $this->start_time,
+                'end_time'      => $this->end_time,
+                'user'          => new UserResource($this->whenLoaded('user')),
+                'attendees'     => AttendeeResource::collection(
+                    $this->whenLoaded('attendees')
+                ),
+            ];
+        }
+    }
+```
+`AttendeeResource.php`
+```php
+    <?php
+
+    namespace App\Http\Resources;
+
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\JsonResource;
+
+    class AttendeeResource extends JsonResource
+    {
+        /**
+         * Transform the resource into an array.
+         *
+         * @return array<string, mixed>
+         */
+        public function toArray(Request $request): array
+        {
+            return parent::toArray($request);
+        }
+    }
+```
