@@ -331,3 +331,80 @@
             return in_array($relation, $relations);
         }
 ```
+
+### Universal(Reusable) Relation Loading Trait
+`CanLoadRelationships.php`
+```php
+    <?php
+
+    namespace App\Http\Traits;
+
+    use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Query\Builder as QueryBuilder;
+    use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+
+    trait CanLoadRelationships
+    {
+        public function loadRelationships(
+            Model|EloquentBuilder|QueryBuilder $for,
+            ?array $relations = null
+        ): Model|EloquentBuilder|QueryBuilder
+        {
+            $relations = $relations ?? $this->relations ?? [];
+            foreach ($relations as $relation) {
+                $for->when(
+                    $this->shouldIcludeRelation($relation),
+                    fn($q)  => $for instanceof Model ? $for->load($relation) : $for->with($relation)
+                );
+            }
+
+            return $for;
+        }
+
+        protected function shouldIcludeRelation(string $relation): bool
+        {
+            $include = request()->query('include');
+
+            if (!$include) {
+                return false;
+            }
+
+            $relations = array_map('trim', explode(',', $include));
+
+            return in_array($relation, $relations);
+        }
+    }
+```
+`EventController.php`
+```php
+    use App\Http\Traits\CanLoadRelationships;
+    class EventController extends Controller
+    {
+        use CanLoadRelationships;
+        private array $relations = ['user', 'attendees', 'attendees.user'];
+
+        public function index()
+        {        
+            $query = $this->loadRelationships(Event::query());
+            ...
+        }
+
+        public function store(Request $request)
+        {
+            ...
+            return new EventResource($this->loadRelationships($event));
+        }
+
+        public function show(Event $event)
+        {
+            return new EventResource($this->loadRelationships($event));
+        }
+
+        public function update(Request $request, Event $event)
+        {
+            ...
+
+            return new EventResource($this->loadRelationships($event));
+        }
+
+```
