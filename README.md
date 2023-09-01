@@ -1,6 +1,6 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-## Installation of Event Management App (REST API)
+# Installation of Event Management App (REST API)
 
 ##### Create a laravel project
 ```bash
@@ -407,4 +407,27 @@
             return new EventResource($this->loadRelationships($event));
         }
 
+```
+## Setting up Authentication Using Sanctum
+<p>
+    <a href="https://laravel.com/docs/10.x/sanctum">
+        https://laravel.com/docs/10.x/sanctum
+    </a>
+</p>
+
+### Sanctum Installation
+```bash
+    composer require laravel/sanctum
+```
+### Publish Sanctum configuration and migration
+```bash
+    php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+```
+### Run migrate if needed
+```bash
+    php artisan migrate
+```
+### Create Authentication Controller
+```bash 
+    php artisan make:controller Api/AuthController
 ```
