@@ -431,3 +431,17 @@
 ```bash 
     php artisan make:controller Api/AuthController
 ```
+### Revoking Token
+<p>
+    <a href="https://laravel.com/docs/10.x/sanctum#revoking-tokens">https://laravel.com/docs/10.x/sanctum#revoking-tokens</a>
+</p>
+```php
+    // Revoke all tokens...
+    $user->tokens()->delete();
+    
+    // Revoke the token that was used to authenticate the current request...
+    $request->user()->currentAccessToken()->delete();
+    
+    // Revoke a specific token...
+    $user->tokens()->where('id', $tokenId)->delete();
+```
