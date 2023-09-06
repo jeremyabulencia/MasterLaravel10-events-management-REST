@@ -435,6 +435,7 @@
 <p>
     <a href="https://laravel.com/docs/10.x/sanctum#revoking-tokens">https://laravel.com/docs/10.x/sanctum#revoking-tokens</a>
 </p>
+
 ```php
     // Revoke all tokens...
     $user->tokens()->delete();
