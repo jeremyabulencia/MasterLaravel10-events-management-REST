@@ -446,3 +446,47 @@
     // Revoke a specific token...
     $user->tokens()->where('id', $tokenId)->delete();
 ```
+
+### Authentication with Gates
+`AuthServiceProvider.php`
+```php
+    public function boot(): void
+    {
+        Gate::define('update-event', function ($user, Event $event) {
+            return $user->id === $event->user_id;
+        });
+
+        Gate::define('delete-attendee', function ($user, Event $event, Attendee $attendee) {
+            return $user->id === $event->user_id || $user->id === $attendee->user_id;
+        });
+    }
+```
+`EventController.php`
+```php
+    public function update(Request $request, Event $event)
+    {
+        // if (Gate::denies('update-event', $event)) {
+        //     abort(403, 'You are not authorized to update this event.');
+        // }
+        $this->authorize('update-event', $event);
+
+        $event->update($request->validate([
+            'name'          => 'sometimes|string|max:255',
+            'description'   => 'nullable|string',
+            'start_time'    => 'sometimes|date',
+            'end_time'      => 'sometimes|date|after:start_time'
+        ]));
+
+        return new EventResource($this->loadRelationships($event));
+    }
+```
+`AttendeeController.php`
+```php
+    public function destroy(Event $event, Attendee $attendee)
+    {
+        $this->authorize('delete-attendee', [$event, $attendee]);
+        $attendee->delete();
+
+        return response(status : 204);
+    }
+```
