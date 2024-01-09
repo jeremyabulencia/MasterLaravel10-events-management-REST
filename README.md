@@ -490,3 +490,174 @@
         return response(status : 204);
     }
 ```
+
+### Authentication with Policies
+```bash
+    php artisan make:policy EventPolicy --model=Event
+```
+```bash
+    php artisan make:policy AttendeePolicy --model=Attendee
+```
+`AuthServiceProvider.php`
+```php
+    class AuthServiceProvider extends ServiceProvider
+    {
+        /**
+         * The model to policy mappings for the application.
+         *
+         * @var array<class-string, class-string>
+         */
+
+        // not required only to override the default behavior (best to use standard ways)
+        protected $policies = [
+            // Event::class => EventPolicy::class,
+            // Attendee::class => AttendeePolicy::class
+        ];
+
+        /**
+         * Register any authentication / authorization services.
+         */
+        public function boot(): void
+        {
+            // commented because Policies were added
+            // Gate::define('update-event', function ($user, Event $event) {
+            //     return $user->id === $event->user_id;
+            // });
+
+            // Gate::define('delete-attendee', function ($user, Event $event, Attendee $attendee) {
+            //     return $user->id === $event->user_id || $user->id === $attendee->user_id;
+            // });
+        }
+    }
+```
+`EventController.php`
+```php
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+        $this->authorizeResource(Event::class,  'event');
+    }
+```
+`AttendeeController.php`
+```php
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show', 'update']);
+        $this->authorizeResource(Attendee::class, 'attendee');
+    }
+```
+`EventPolicy.php`
+```php
+    class EventPolicy
+    {
+        /**
+         * Determine whether the user can view any models.
+         */
+        public function viewAny(?User $user): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can view the model.
+         */
+        public function view(?User $user, Event $event): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can create models.
+         */
+        public function create(User $user): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can update the model.
+         */
+        public function update(User $user, Event $event): bool
+        {
+            return $user->id === $event->user_id;
+        }
+
+        /**
+         * Determine whether the user can delete the model.
+         */
+        public function delete(User $user, Event $event): bool
+        {
+            return $user->id === $event->user_id;
+        }
+
+        /**
+         * Determine whether the user can restore the model.
+         */
+        public function restore(User $user, Event $event): bool
+        {
+            //
+        }
+
+        /**
+         * Determine whether the user can permanently delete the model.
+         */
+        public function forceDelete(User $user, Event $event): bool
+        {
+            //
+        }
+    }
+```
+`AttendeePolicy.php`
+```php
+    class AttendeePolicy
+    {
+        /**
+         * Determine whether the user can view any models.
+         */
+        public function viewAny(?User $user): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can view the model.
+         */
+        public function view(?User $user, Attendee $attendee): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can create models.
+         */
+        public function create(User $user): bool
+        {
+            return true;
+        }
+
+        /**
+         * Determine whether the user can delete the model.
+         */
+        public function delete(User $user, Attendee $attendee): bool
+        {
+            return $user->id === $attendee->event->user_id || 
+                $user->id === $attendee->user_id;
+        }
+
+        /**
+         * Determine whether the user can restore the model.
+         */
+        public function restore(User $user, Attendee $attendee): bool
+        {
+            //
+        }
+
+        /**
+         * Determine whether the user can permanently delete the model.
+         */
+        public function forceDelete(User $user, Attendee $attendee): bool
+        {
+            //
+        }
+    }
+```
