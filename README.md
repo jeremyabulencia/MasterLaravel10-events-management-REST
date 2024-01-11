@@ -661,3 +661,104 @@
         }
     }
 ```
+
+### Event Reminder
+```bash
+    # create app/Console/Commands/SendEventReminders.php
+    php artisan make:command SendEventReminders
+```
+`SendEventReminders.php`
+```php
+    <?php
+
+        namespace App\Console\Commands;
+
+        use App\Models\Event;
+        use Illuminate\Console\Command;
+        use Illuminate\Support\Str;
+
+        class SendEventReminders extends Command
+        {
+            /**
+             * The name and signature of the console command.
+             *
+             * @var string
+             */
+            protected $signature = 'app:send-event-reminders';
+
+            /**
+             * The console command description.
+             *
+             * @var string
+             */
+            protected $description = 'Sends notifications to all event attendees that event starts soon';
+
+            /**
+             * Execute the console command.
+             */
+            public function handle()
+            {
+                $events = Event::with('attendees.user')
+                    ->whereBetween('start_time', [now(), now()->addDay()])
+                    ->get();
+
+                $eventCount = $events->count();
+                $eventLabel = Str::plural('event', $eventCount);
+                
+                $this->info("Found {$eventCount} {$eventLabel}.");
+
+                $events->each(
+                    fn($event) => $event->attendees->each(
+                        fn($attendee) => 
+                            $this->info("Notifying the user {$attendee->user->id}")
+                        )
+                    );
+
+                $this->info('Reminder notifications sent successfully!');
+            }
+        }
+```
+```bash
+    # run the event
+    $ php artisan app:send-event-reminders
+    Found 1 event.
+    Notifying the user 138
+    Notifying the user 573
+    Reminder notifications sent successfully!
+```
+
+### Task Scheduling
+```link
+    https://laravel.com/docs/10.x/scheduling
+```
+`Kernel.php`
+```php
+    protected function schedule(Schedule $schedule): void
+    {
+        // $schedule->command('inspire')->hourly();
+        $schedule->command('app:send-event-reminders')
+            ->everyMinute();
+    }
+```
+```bash
+    # to run command continously
+    php artisan schedule:work
+```
+```bash
+    $ php artisan schedule:work
+
+    INFO  Running scheduled tasks every minute.
+
+
+    2024-01-11 08:13:00 Running ["artisan" app:send-event-reminders] ...................................................................... 450ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+
+    2024-01-11 08:14:00 Running ["artisan" app:send-event-reminders] ...................................................................... 416ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+
+    2024-01-11 08:15:00 Running ["artisan" app:send-event-reminders] ...................................................................... 433ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+```
