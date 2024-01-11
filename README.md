@@ -726,3 +726,39 @@
     Notifying the user 573
     Reminder notifications sent successfully!
 ```
+
+### Task Scheduling
+```link
+    https://laravel.com/docs/10.x/scheduling
+```
+`Kernel.php`
+```php
+    protected function schedule(Schedule $schedule): void
+    {
+        // $schedule->command('inspire')->hourly();
+        $schedule->command('app:send-event-reminders')
+            ->everyMinute();
+    }
+```
+```bash
+    # to run command continously
+    php artisan schedule:work
+```
+```bash
+    $ php artisan schedule:work
+
+    INFO  Running scheduled tasks every minute.
+
+
+    2024-01-11 08:13:00 Running ["artisan" app:send-event-reminders] ...................................................................... 450ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+
+    2024-01-11 08:14:00 Running ["artisan" app:send-event-reminders] ...................................................................... 416ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+
+    2024-01-11 08:15:00 Running ["artisan" app:send-event-reminders] ...................................................................... 433ms DONE
+    ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
+
+```
