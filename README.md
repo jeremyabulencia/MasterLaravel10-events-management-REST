@@ -762,3 +762,130 @@
     ⇂ "C:\php8\php.exe" "artisan" app:send-event-reminders > "NUL" 2>&1
 
 ```
+
+### Notifications
+```bash
+    php artisan make:Notification EventReminderNotification
+```
+
+### Setting Up Email (Mailpit)
+`EventReminderNotification.php`
+```php
+    public function __construct(
+        public Event $event
+    )
+    {
+        //
+    }
+
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+    public function via(object $notifiable): array
+    {
+        return ['mail'];
+    }
+
+    /**
+     * Get the mail representation of the notification.
+     */
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+                    ->line('Reminder: You have an upcoming event!')
+                    ->action('View Event', route('events.show', $this->event->id))
+                    ->line(
+                        "This event {$this->event->name} start at {$this->event->start_time}"
+                    );
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'event_id'          => $this->event->id,
+            'event_name'        => $this->event->name,
+            'event_start_time'  => $this->event->start_time,
+        ];
+    }
+```
+`SendEventReminders.php`
+```php
+    public function handle()
+    {
+        $events = Event::with('attendees.user')
+            ->whereBetween('start_time', [now(), now()->addDay()])
+            ->get();
+
+        $eventCount = $events->count();
+        $eventLabel = Str::plural('event', $eventCount);
+        
+        $this->info("Found {$eventCount} {$eventLabel}.");
+
+        $events->each(
+            fn($event) => $event->attendees->each(
+                fn($attendee) => 
+                    $attendee->user->notify(
+                        new EventReminderNotification(
+                            $event
+                        )
+                    )
+                )
+            );
+
+        $this->info('Reminder notifications sent successfully!');
+    }
+```
+#### configure env
+`.env`
+```php
+    MAIL_MAILER=smtp
+    MAIL_HOST=127.0.0.1
+    MAIL_PORT=1025
+    MAIL_USERNAME=null
+    MAIL_PASSWORD=null
+    MAIL_ENCRYPTION=null
+    MAIL_FROM_ADDRESS=jabulencia@examp.com
+    MAIL_FROM_NAME="${APP_NAME}"
+```
+#### run the task
+```bash
+    php artisan app:send-event-reminders
+```
+Encountered an error on mailpit
+```error
+    Connection could not be established with host "mailpit:1025": stream_socket_client(): php_network_getaddresses: getaddrinfo for mailpit failed: No such host is known.
+```
+I ran this and discovered that it cached the unconfigured settings for mailpit
+```bash
+    $ grep -R mailpit * | egrep -v storage
+    bootstrap/cache/config.php:        'host' => 'mailpit',
+    vendor/laravel/sail/src/Console/Concerns/InteractsWithDockerComposeServices.php:        'mailpit',
+    vendor/laravel/sail/src/Console/Concerns/InteractsWithDockerComposeServices.php:    protected $defaultServices = ['mysql', 'redis', 'selenium', 'mailpit'];
+    vendor/laravel/sail/src/Console/Concerns/InteractsWithDockerComposeServices.php:        if (in_array('mailpit', $services)) {
+    vendor/laravel/sail/src/Console/Concerns/InteractsWithDockerComposeServices.php:            $environment = preg_replace("/^MAIL_HOST=(.*)/m", "MAIL_HOST=mailpit", $environment);
+    vendor/laravel/sail/stubs/mailpit.stub:mailpit:
+    vendor/laravel/sail/stubs/mailpit.stub:    image: 'axllent/mailpit:latest'
+```
+then I run this to remove cache
+```bash
+    php artisan config:clear
+```
+Result
+```bash
+    php artisan app:send-event-reminders
+
+    Found 5 events.
+    Reminder notifications sent successfully!
+```
+#### check mailpit (localhost:8025)
+I set up the mailpit via docker
+```link
+    https://github.com/jeremyabulencia/setting-up/commit/29e4ad7da295bcc19df182d9dc128a335b5c4931
+```
