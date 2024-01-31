@@ -889,3 +889,37 @@ I set up the mailpit via docker
 ```link
     https://github.com/jeremyabulencia/setting-up/commit/29e4ad7da295bcc19df182d9dc128a335b5c4931
 ```
+
+## Queuing
+### Setting Up Queue Driver
+```
+    Redis
+    Amazon SQS
+    Database
+```
+```bash
+    // create a migration file for jobs table
+    php artisan queue:table
+```
+```bash
+    // create a table for queueing
+    php artisan migrate
+```
+`.env`
+```php
+    QUEUE_CONNECTION=database
+```
+`EventReminderNotification.php`
+```php
+    class EventReminderNotification extends Notification implements ShouldQueue
+```
+run scheduler
+```bash
+    php artisan app:send-event-reminders 
+```
+data to be run is saved on *jobs* table
+```bash
+    // to execute the queued jobs (needs to be running all the time)
+    php artisan queue:work
+```
+ 
