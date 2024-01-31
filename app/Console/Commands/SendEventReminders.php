@@ -39,7 +39,7 @@ class SendEventReminders extends Command
 
         $events->each(
             fn($event) => $event->attendees->each(
-                fn($attendee) => 
+                fn($attendee) =>
                     $attendee->user->notify(
                         new EventReminderNotification(
                             $event
