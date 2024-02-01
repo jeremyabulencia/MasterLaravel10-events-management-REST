@@ -922,4 +922,24 @@ data to be run is saved on *jobs* table
     // to execute the queued jobs (needs to be running all the time)
     php artisan queue:work
 ```
- 
+## Throttling
+`EventController.php`
+```php
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+        $this->middleware('throttle:60,1')
+            ->only(['store','update','destroy']);
+        $this->authorizeResource(Event::class,  'event');
+    }
+```
+`AttendeeController.php`
+```php
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show', 'update']);
+        $this->middleware('throttle:60,1')
+            ->only(['store','destroy']);
+        $this->authorizeResource(Attendee::class, 'attendee');
+    }
+```
